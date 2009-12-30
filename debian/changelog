@@ -1,0 +1,5 @@
+cwiid (0.6.00-1) unstable; urgency=low
+
+  * Initial debian packaged release
+
+ -- Pekka Vanhoja <pekka.vanhoja@gmail.com>  Wed, 30 Dec 2009 15:28:26 +0200
