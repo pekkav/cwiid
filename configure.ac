@@ -21,7 +21,7 @@ AC_ARG_WITH(
 	[case $withval in 
 		yes)
 			REQUIRE_PYTHON=1
-			PYTHON_NAME=python
+			PYTHON_NAME=python2.5
 		;;
 		no)
 			REQUIRE_PYTHON=
@@ -32,7 +32,7 @@ AC_ARG_WITH(
 			PYTHON_NAME=$withval
 		;;
 	esac],
-	[REQUIRE_PYTHON=1; PYTHON_NAME=python])
+	[REQUIRE_PYTHON=1; PYTHON_NAME=python2.5])
 if test $REQUIRE_PYTHON; then
 	AC_CHECK_PROGS([PYTHON],$PYTHON_NAME)
 	if test $REQUIRE_PYTHON -a ! $PYTHON; then
@@ -41,7 +41,7 @@ if test $REQUIRE_PYTHON; then
 fi
 AC_SUBST(PYTHON)
 if test $PYTHON; then
-	PYTHON_VERSION=[`$PYTHON -c 'import sys; print sys.version[:3]'`]
+	PYTHON_VERSION=2.5
 	AC_SUBST(PYTHON_VERSION)
 	AC_DEFINE([HAVE_PYTHON],1,[Define to 1 if python support is enabled])
 fi
