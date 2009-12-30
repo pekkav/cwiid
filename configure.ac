@@ -1,4 +1,4 @@
-AC_INIT(CWiid,0.6.00,donnie.smith@gatech.edu)
+AC_INIT(CWiid,0.6.00,pekka.vanhoja@gmail.com)
 AC_CONFIG_HEADER(common/include/config.h)
 
 AC_PROG_CC
