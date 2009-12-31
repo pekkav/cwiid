@@ -1,3 +1,9 @@
+cwiid (0.6.00-2) unstable; urgency=low
+
+  * Added new component for maemonized wmgui
+
+ -- Pekka Vanhoja <pekka.vanhoja@gmail.com>  Thu, 31 Dec 2009 11:28:56 +0200
+
 cwiid (0.6.00-1) unstable; urgency=low
 
   * Initial debian packaged release
