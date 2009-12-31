@@ -1,0 +1,19 @@
+#Copyright (C) 2009 Pekka Vanhoja
+
+include @top_builddir@/defs.mak
+
+APP_NAME = wmgui-maemo
+
+SOURCES = main.c
+
+CFLAGS += @GTK_CFLAGS@ @HILDON_CFLAGS@ @OSSO_CFLAGS@ -I@top_builddir@/libcwiid
+LDFLAGS += -L@top_builddir@/libcwiid
+LDLIBS += @GTK_LIBS@ @HILDON_LIBS@ @OSSO_LIBS@ -lm -lcwiid
+INST_DIR = @bindir@
+
+include $(COMMON)/include/app.mak
+
+distclean: clean
+	rm Makefile
+
+.PHONY: distclean

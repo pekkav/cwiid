@@ -1,0 +1,2 @@
+debian/tmp/usr/bin/wmgui-maemo
+debian/menus/wmgui-maemo.desktop usr/share/applications/hildon
