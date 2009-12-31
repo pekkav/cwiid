@@ -103,14 +103,6 @@ PKG_CHECK_MODULES([GTK], [$pkg_modules])
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
-PKG_CHECK_MODULES(HILDON, [hildon-1])
-AC_SUBST(HILDON_CFLAGS)
-AC_SUBST(HILDON_LIBS)
-
-PKG_CHECK_MODULES(OSSO, [libosso])
-AC_SUBST(OSSO_CFLAGS)
-AC_SUBST(OSSO_LIBS)
-
 AC_OUTPUT(
 	[Makefile]
 	[defs.mak]
@@ -130,6 +122,5 @@ AC_OUTPUT(
  	[wminput/plugins/nunchuk_stick2btn/Makefile]
 	[lswm/Makefile]
 	[python/Makefile]
-	[wmgui-maemo/Makefile]
 	)
 
