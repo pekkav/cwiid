@@ -1,3 +1,9 @@
+cwiid (0.6.00-2.1) unstable; urgency=low
+
+  * Changed wmgui-maemo to use C++ bindings for Hildon and Gtk
+
+ -- Pekka Vanhoja <pekka.vanhoja@gmail.com>  Sun, 03 Jan 2010 18:39:40 +0200
+
 cwiid (0.6.00-2) unstable; urgency=low
 
   * Added new component for maemonized wmgui

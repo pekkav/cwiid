@@ -1,7 +1,7 @@
 AC_INIT(CWiid,0.6.00,pekka.vanhoja@gmail.com)
 AC_CONFIG_HEADER(common/include/config.h)
 
-AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_AWK
 AC_PROG_LEX
 if test "$LEX" != "flex"; then
@@ -110,6 +110,10 @@ AC_SUBST(HILDON_LIBS)
 PKG_CHECK_MODULES(OSSO, [libosso])
 AC_SUBST(OSSO_CFLAGS)
 AC_SUBST(OSSO_LIBS)
+
+PKG_CHECK_MODULES(HILDONMM, [hildonmm])
+AC_SUBST(HILDONMM_CFLAGS)
+AC_SUBST(HILDONMM_LIBS)
 
 AC_OUTPUT(
 	[Makefile]

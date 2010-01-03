@@ -15,21 +15,32 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-include @top_builddir@/defs.mak
+OBJECTS = $(SOURCES:.cpp=.o)
+DEPS    = $(SOURCES:.cpp=.d)
 
-APP_NAME = wmgui-maemo
+INST_DIR ?= /usr/local/bin
 
-SOURCES = main.cpp mainwindow.cpp buttonframe.cpp
+DEST_INST_DIR = $(ROOTDIR)$(INST_DIR)
 
-CFLAGS += @GTK_CFLAGS@ @HILDON_CFLAGS@ @OSSO_CFLAGS@ @HILDONMM_CFLAGS@ -I@top_builddir@/libcwiid
-LDFLAGS += -L@top_builddir@/libcwiid
-LDLIBS += @GTK_LIBS@ @HILDON_LIBS@ @OSSO_LIBS@ @HILDONMM_LIBS@ -lm -lcwiid
-INST_DIR = @bindir@
-CXXFLAGS = $(CFLAGS)
+all: $(APP_NAME)
 
-include $(COMMON)/include/appcpp.mak
+$(APP_NAME): $(OBJECTS)
+	$(CPP) -o $@ $(OBJECTS) $(LDFLAGS) $(LDLIBS)
 
-distclean: clean
-	rm Makefile
+install: $(APP_NAME)
+	install -D $(APP_NAME) $(DEST_INST_DIR)/$(APP_NAME)
 
-.PHONY: distclean
+clean:
+	rm -f $(APP_NAME) $(OBJECTS) $(DEPS)
+
+uninstall:
+	rm -f $(DEST_INST_DIR)/$(APP_NAME)
+
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),distclean)
+include $(COMMON)/include/depcpp.mak
+-include $(DEPS)
+endif
+endif
+
+.PHONY: all install uninstall clean
