@@ -53,7 +53,7 @@ main(int argc,
      char *argv[])
 {
     // Init Gtk
-    Gtk::Main main_loop(&argc, &argv);
+    Gtk::Main mainLoop(&argc, &argv);
     
     // Init Hildon
     Hildon::init();
@@ -61,12 +61,12 @@ main(int argc,
     Glib::set_application_name(APP_NAME);
     
     // Init osso context
-    osso_context_t* osso_context = osso_initialize("wmgui-maemo",
-                                                   APP_VERSION,
-                                                   TRUE,
-                                                   NULL);
+    osso_context_t* ossoContext = osso_initialize("wmgui-maemo",
+                                                  APP_VERSION,
+                                                  TRUE,
+                                                  NULL);
 
-    if (!osso_context) {
+    if (!ossoContext) {
         std::cerr << "osso_initialize() failed." << std::endl;
         exit(1);
     }
@@ -99,7 +99,7 @@ main(int argc,
     }
 
     // BDADDR
-    char *str_addr = NULL;
+    char *strAddr = NULL;
     if (optind < argc) {
         if (str2ba(argv[optind], &bdaddr)) {
             std::cout << "Invalid bdaddr" << std::endl;
@@ -111,8 +111,8 @@ main(int argc,
             std::cerr << USAGE;
             exit(1);
         }
-    } else if ((str_addr = getenv (WIIMOTE_BDADDR)) != NULL) {
-        if (str2ba (str_addr, &bdaddr)) {
+    } else if ((strAddr = getenv (WIIMOTE_BDADDR)) != NULL) {
+        if (str2ba (strAddr, &bdaddr)) {
             std::cout << "Invalid address in " << WIIMOTE_BDADDR << std::endl;
             bdaddr = *BDADDR_ANY;
         }
@@ -120,12 +120,12 @@ main(int argc,
         bdaddr = *BDADDR_ANY;
     }
 
-    MainWindow main_window;
-    Hildon::Program::get_instance()->add_window(main_window);
+    MainWindow mainWindow;
+    Hildon::Program::get_instance()->add_window(mainWindow);
 
-    main_loop.run(main_window);
+    mainLoop.run(mainWindow);
 
-    osso_deinitialize(osso_context);
+    osso_deinitialize(ossoContext);
     gdk_threads_leave();
 
     return 0;

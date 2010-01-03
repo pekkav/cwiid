@@ -20,10 +20,14 @@
 
 #include <hildonmm.h>
 
+#include "buttonframe.h"
+
 class MainWindow : public Hildon::StackableWindow
 {
 public:
+
     MainWindow();
+
     virtual ~MainWindow();
 
 protected:
@@ -31,19 +35,7 @@ protected:
 private:
 
     // Child widgets
-    Gtk::Frame button_frame;
-    Gtk::Alignment alignment;
-    Gtk::Table table1;
-
-    Gtk::Alignment alignment2;
-    Gtk::EventBox ev2;
-    Gtk::Label label2;
-
-    Gtk::Alignment alignment1;
-    Gtk::EventBox ev1;
-    Gtk::Label label1;
-    
-    //Gtk::Label m_label;
+    ButtonFrame mButtonFrame;
 };
 
 #endif // __MAINWINDOW_H_
