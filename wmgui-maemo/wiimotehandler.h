@@ -37,6 +37,7 @@ public:
     void SetBdAddr(const bdaddr_t* aBdAddr);
     
     void Connect();
+    void Disconnect();
 
     void AddObserver(const IWiimoteObserver* aObserver);
     void RemoveObserver(const IWiimoteObserver* aObserver);
@@ -45,6 +46,10 @@ public:
 
     void NotifyButtonDown(IWiimoteObserver::WiimoteButton aButton);
     void NotifyButtonUp(IWiimoteObserver::WiimoteButton aButton);
+
+    void NotifyBattery(unsigned int aBatteryLevel);
+
+    void NotifyExtension(cwiid_ext_type aExtType);
 
 private:
 
@@ -58,6 +63,8 @@ private:
     static unsigned int mRefCount;
 
     cwiid_wiimote_t* mWiimote;
+
+    cwiid_ext_type mExtType;
 
     bdaddr_t* mBdAddr;
 

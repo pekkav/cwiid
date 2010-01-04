@@ -134,9 +134,6 @@ main(int argc,
     MainWindow mainWindow;
     Hildon::Program::get_instance()->add_window(mainWindow);
 
-    // Connect to Wiimote
-    wiimoteHandler->Connect();
-
     // Run Gtk main loop
     mainLoop.run(mainWindow);
 

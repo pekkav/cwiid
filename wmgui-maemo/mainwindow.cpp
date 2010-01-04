@@ -22,16 +22,34 @@
 #include "wiimotehandler.h"
 
 MainWindow::MainWindow() : mVBox(false, 0),
-                           mStatusLabel("No connection"),
-                           mHandler(NULL)
+                           mConnLabel("No connection"),
+                           mConnectBtn("Connect"),
+                           mHandler(NULL),
+                           mConnStatus(ENotConnected)
 {
+    // App menu content
+    mConnectBtn.show();
+    mAppMenu.append(mConnectBtn);
+    // Connect button clicked signal handler
+    mConnectBtn.signal_clicked().connect(
+        sigc::mem_fun(*this, &MainWindow::OnConnectButtonClicked));
+    // Add to program as common app menu
+    Hildon::Program::get_instance()->set_common_app_menu(mAppMenu);
+    
+    // Status box
+    mConnLabel.show();
+    mStatusBox.pack_start(mConnLabel);
     mStatusLabel.show();
-    mVBox.pack_start(mStatusLabel);
+    mStatusBox.pack_start(mStatusLabel);
+    mExtLabel.show();
+    mStatusBox.pack_start(mExtLabel);
+    mVBox.pack_start(mStatusBox);
+
     // Buttons
     mButtonFrame.show();
     mVBox.pack_start(mButtonFrame);
 
-    // Add widgets to the window
+    // Add container to the window
     add(mVBox);
 
     // Make everything visible
@@ -53,23 +71,92 @@ void MainWindow::ConnectionStatus(ConnStatus aStatus)
 
     switch (aStatus) {
         case ENotConnected: {
-            mStatusLabel.set_text("No connection");
+            mConnLabel.set_text("No connection");
+            mStatusLabel.set_text(Glib::ustring::ustring());
+            mExtLabel.set_text(Glib::ustring::ustring());
+            mConnectBtn.set_label("Connect");
             break;
         }
         case EConnecting: {
-            mStatusLabel.set_text("Connecting...");
+            ShowConnectDialog();
             break;
         }
         case EConnected: {
-            mStatusLabel.set_text("Connected");
+            mConnLabel.set_text("Connected");
+            mConnectBtn.set_label("Disconnect");
             break;
         }
         case EConnectionError: {
-            mStatusLabel.set_text("Connection error");
+            mConnLabel.set_text("Connection error");
             break;
         }
         default: {
             break;
         }
     }
+
+    mConnStatus = aStatus;
+}
+
+#define BATTERY_FORMAT_STRING "Battery: %1%%"
+
+void MainWindow::BatteryLevel(unsigned int aBatteryLevel)
+{
+    Glib::ustring batt = Glib::ustring::compose(BATTERY_FORMAT_STRING, aBatteryLevel);
+    mStatusLabel.set_text(batt);
+}
+
+void MainWindow::CurrentWiimoteExtension(WiimoteExtension aExtension)
+{
+    Glib::ustring extString;
+
+    switch (aExtension) {
+        case ENone: {
+            extString.assign("None");
+            break;
+        }
+        case ENunchuck: {
+            extString.assign("Nunchuck");
+            break;
+        }
+        case EClassic: {
+            extString.assign("Classic");
+            break;
+        }
+        case EBalance: {
+            extString.assign("Balance");
+            break;
+        }
+        case EMotionPlus: {
+            extString.assign("MotionPlus");
+            break;
+        }
+        case EUnknown: {
+            extString.assign("Unknown");
+            break;
+        }
+        default: {
+            ULOG_DEBUG_F("Unhandled extension type");
+            break;
+        }
+    }
+
+    mExtLabel.set_text(extString);
+}
+
+void MainWindow::OnConnectButtonClicked()
+{
+    if (mConnStatus == ENotConnected) {
+        mHandler->Connect();
+    } else {
+        mHandler->Disconnect();
+    }
+}
+
+void MainWindow::ShowConnectDialog()
+{
+    Hildon::Note note(Hildon::NOTE_TYPE_CONFIRMATION_BUTTON,
+                      "Put Wiimote in discoverable mode (press 1+2) and press OK");
+    note.add_button(Gtk::Stock::OK, Gtk::RESPONSE_YES);
+    note.run();
 }

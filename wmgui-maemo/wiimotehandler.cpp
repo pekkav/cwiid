@@ -74,25 +74,18 @@ void WiimoteHandler::Connect()
 
     if ((mWiimote = cwiid_open(mBdAddr, CWIID_FLAG_MESG_IFC)) == NULL) {
         ULOG_DEBUG_F("Unable to connect");
-        //message(GTK_MESSAGE_ERROR, "Unable to connect", GTK_WINDOW(winMain));
-        //status("No connection");
         NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
         NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     } else if (cwiid_set_mesg_callback(mWiimote, &cwiid_callback)) {
         ULOG_DEBUG_F("Error setting callback");
-        //message(GTK_MESSAGE_ERROR, "Error setting callback",
-        //        GTK_WINDOW(winMain));
         if (cwiid_close(mWiimote)) {
-            //message(GTK_MESSAGE_ERROR, "Error on disconnect",
-            //        GTK_WINDOW(winMain));
+            ULOG_DEBUG_F("Error on disconnect");
         }
         mWiimote = NULL;
-        //status("No connection");
         NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
         NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     } else {
         ULOG_DEBUG_F("Connected");
-        //status("Connected");
         /*
         if (cwiid_get_acc_cal(mWiimote, CWIID_EXT_NONE, &wm_cal)) {
             message(GTK_MESSAGE_ERROR, "Unable to retrieve accelerometer "
@@ -113,6 +106,17 @@ void WiimoteHandler::Connect()
 
     if (resetAddr) {
         bacpy(mBdAddr, BDADDR_ANY);
+    }
+}
+
+void WiimoteHandler::Disconnect()
+{
+    if (mWiimote) {
+        if (cwiid_close(mWiimote)) {
+            ULOG_DEBUG_F("Error on disconnect");
+        }
+        mWiimote = NULL;
+        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     }
 }
 
@@ -167,7 +171,74 @@ void WiimoteHandler::NotifyButtonUp(IWiimoteObserver::WiimoteButton aButton)
     }
 }
 
-WiimoteHandler::WiimoteHandler() : mWiimote(NULL)
+void WiimoteHandler::NotifyBattery(unsigned int aBatteryLevel)
+{
+    list<const IWiimoteObserver*>::iterator i;
+    for (i = mObservers.begin(); i != mObservers.end(); ++i) {
+        IWiimoteObserver* observer = (IWiimoteObserver*)*i;
+        observer->BatteryLevel(aBatteryLevel);
+    }
+}
+
+void WiimoteHandler::NotifyExtension(cwiid_ext_type aExtType)
+{
+    IWiimoteObserver::WiimoteExtension ext;
+
+    switch (mExtType) {
+        case CWIID_EXT_NONE: {
+            ext = IWiimoteObserver::ENone;
+            break;
+        }
+        case CWIID_EXT_NUNCHUK: {
+            ext = IWiimoteObserver::ENunchuck;
+            break;
+        }
+        case CWIID_EXT_CLASSIC: {
+            ext = IWiimoteObserver::EClassic;
+            break;
+        }
+        case CWIID_EXT_BALANCE: {
+            ext = IWiimoteObserver::EBalance;
+            break;
+        }
+        case CWIID_EXT_MOTIONPLUS: {
+            ext = IWiimoteObserver::EMotionPlus;
+            break;
+        }
+        case CWIID_EXT_UNKNOWN: {
+            ext = IWiimoteObserver::EUnknown;
+            break;
+        }
+        default: {
+            ULOG_DEBUG_F("Unhandled extenstion type");
+            break;
+        }
+    }
+
+    if (aExtType == CWIID_EXT_NUNCHUK &&
+        mExtType != CWIID_EXT_NUNCHUK) {
+        /*
+        if (cwiid_get_acc_cal(wiimote, CWIID_EXT_NUNCHUK, &nc_cal)) {
+                message(GTK_MESSAGE_ERROR,
+                    "Unable to retrieve accelerometer calibration",
+                    GTK_WINDOW(winMain));
+            }
+        }
+        */
+    }
+
+    mExtType = aExtType;
+
+    list<const IWiimoteObserver*>::iterator i;
+    for (i = mObservers.begin(); i != mObservers.end(); ++i) {
+        IWiimoteObserver* observer = (IWiimoteObserver*)*i;
+        observer->CurrentWiimoteExtension(ext);
+    }
+}
+
+WiimoteHandler::WiimoteHandler() : mWiimote(NULL),
+                                   mExtType(CWIID_EXT_NONE)
+                                   
 {
     mBdAddr = (bdaddr_t*) (bt_malloc(sizeof(bdaddr_t)));
 }
@@ -256,6 +327,19 @@ void cwiid_btn(struct cwiid_btn_mesg *mesg)
     WiimoteHandler::Release();
 }
 
+void cwiid_status(struct cwiid_status_mesg *mesg)
+{
+    WiimoteHandler *handler = WiimoteHandler::GetInstance();
+
+    unsigned int batteryLevel = (unsigned int) (100.0 * mesg->battery /
+                                                CWIID_BATTERY_MAX);
+
+    handler->NotifyBattery(batteryLevel);
+    handler->NotifyExtension(mesg->ext_type);
+
+    WiimoteHandler::Release();
+}
+
 void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
                     union cwiid_mesg mesg_array[], struct timespec *timestamp)
 {
@@ -269,47 +353,7 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
     for (i = 0; i < mesg_count; i++) {
         switch (mesg_array[i].type) {
             case CWIID_MESG_STATUS: {
-                /*
-                snprintf(battery, BATTERY_STR_LEN,"Battery:%d%%",
-                        (int) (100.0 * mesg_array[i].status_mesg.battery /
-                         CWIID_BATTERY_MAX));
-                gtk_statusbar_push(GTK_STATUSBAR(statBattery), 0, battery);
-                switch (mesg_array[i].status_mesg.ext_type) {
-                    case CWIID_EXT_NONE: {
-                        ext_str = "No extension";
-                        break;
-                    }
-                    case CWIID_EXT_NUNCHUK: {
-                        ext_str = "Nunchuk";
-                        if (ext_type != CWIID_EXT_NUNCHUK) {
-                            if (cwiid_get_acc_cal(wiimote, CWIID_EXT_NUNCHUK,
-                                                  &nc_cal)) {
-                                message(GTK_MESSAGE_ERROR,
-                                    "Unable to retrieve accelerometer calibration",
-                                    GTK_WINDOW(winMain));
-                            }
-                        }
-                        break;
-                    }
-                    case CWIID_EXT_CLASSIC: {
-                        ext_str = "Classic controller";
-                        break;
-                    }
-                    case CWIID_EXT_MOTIONPLUS: {
-                        ext_str = "MotionPlus";
-                        break;
-                    }
-                    case CWIID_EXT_UNKNOWN: {
-                        ext_str = "Unknown extension";
-                        break;
-                    }
-                }
-                gtk_statusbar_push(GTK_STATUSBAR(statExtension), 0, ext_str);
-                clear_nunchuk_widgets();
-                clear_classic_widgets();
-                clear_motionplus_widgets();
-                ext_type = mesg_array[i].status_mesg.ext_type;
-                */
+                cwiid_status(&mesg_array[i].status_mesg);
                 break;
             }
             case CWIID_MESG_BTN: {

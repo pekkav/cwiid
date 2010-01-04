@@ -36,16 +36,35 @@ public:
 
     void ConnectionStatus(ConnStatus aStatus);
 
-protected:
+    void BatteryLevel(unsigned int aBatteryLevel);
+
+    void CurrentWiimoteExtension(WiimoteExtension aExtension);
+
+private:
+
+    void OnConnectButtonClicked();
+
+    void ShowConnectDialog();
 
 private:
 
     // Child widgets
     Gtk::VBox mVBox;
+
+    Gtk::HBox mStatusBox;
+    Gtk::Label mConnLabel;
     Gtk::Label mStatusLabel;
+    Gtk::Label mExtLabel;
+
     ButtonFrame mButtonFrame;
 
+    // App menu widgets
+    Hildon::AppMenu mAppMenu;
+    Gtk::Button mConnectBtn;
+
     WiimoteHandler *mHandler;
+
+    ConnStatus mConnStatus;
 };
 
 #endif // __MAINWINDOW_H_

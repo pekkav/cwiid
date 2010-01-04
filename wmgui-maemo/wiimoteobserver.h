@@ -47,6 +47,19 @@ public:
 
     virtual void ButtonDown(WiimoteButton /*aButton*/) {};
     virtual void ButtonUp(WiimoteButton /*aButton*/) {};
+
+    virtual void BatteryLevel(unsigned int /*aBatteryLevel*/) {};
+
+    enum WiimoteExtension {
+        ENone = 0,
+        ENunchuck,
+        EClassic,
+        EBalance,
+        EMotionPlus,
+        EUnknown
+    };
+
+    virtual void CurrentWiimoteExtension(WiimoteExtension /*aExtension*/) {};
 };
 
 #endif // __WIIMOTEOBSERVER_H_
