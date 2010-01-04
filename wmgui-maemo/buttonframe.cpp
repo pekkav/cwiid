@@ -20,7 +20,7 @@
 #include "wiimotehandler.h"
 
 ButtonFrame::ButtonFrame() : Gtk::Frame("Buttons"),
-                             mTable(8, 3, false),
+                             mTable(8, 3, true),
                              mBLabel("B"),
                              mUpLabel("Up"),
                              mLeftLabel("Left"),

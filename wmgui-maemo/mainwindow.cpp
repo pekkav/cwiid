@@ -22,7 +22,8 @@
 #include "wiimotehandler.h"
 
 MainWindow::MainWindow() : mVBox(false, 0),
-                           mStatusLabel("No connection")
+                           mStatusLabel("No connection"),
+                           mHandler(NULL)
 {
     mStatusLabel.show();
     mVBox.pack_start(mStatusLabel);
