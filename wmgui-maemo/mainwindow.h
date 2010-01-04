@@ -21,8 +21,12 @@
 #include <hildonmm.h>
 
 #include "buttonframe.h"
+#include "wiimoteobserver.h"
 
-class MainWindow : public Hildon::StackableWindow
+class WiimoteHandler;
+
+class MainWindow : public Hildon::StackableWindow,
+                   public IWiimoteObserver
 {
 public:
 
@@ -30,12 +34,18 @@ public:
 
     virtual ~MainWindow();
 
+    void ConnectionStatus(ConnStatus aStatus);
+
 protected:
 
 private:
 
     // Child widgets
+    Gtk::VBox mVBox;
+    Gtk::Label mStatusLabel;
     ButtonFrame mButtonFrame;
+
+    WiimoteHandler *mHandler;
 };
 
 #endif // __MAINWINDOW_H_

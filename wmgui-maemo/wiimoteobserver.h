@@ -15,12 +15,38 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __COMMON_H_
-#define __COMMON_H_
+#ifndef __WIIMOTEOBSERVER_H_
+#define __WIIMOTEOBSERVER_H_
 
-// See osso-log.h for controlling the debug logging
-//#define OSSOLOG_COMPILE 1
-//#define OSSOLOG_STDOUT 1
-#include <osso-log.h>
+class IWiimoteObserver
+{
+public:
 
-#endif // __COMMON_H_
+    enum ConnStatus {
+        ENotConnected = 0,
+        EConnecting,
+        EConnected,
+        EConnectionError
+    };
+
+    virtual void ConnectionStatus(ConnStatus /*aStatus*/) {};
+
+    enum WiimoteButton {
+        EUp = 0,
+        ELeft,
+        ERight,
+        EDown,
+        EA,
+        EB,
+        EPlus,
+        EMinus,
+        EHome,
+        E1,
+        E2
+    };
+
+    virtual void ButtonDown(WiimoteButton /*aButton*/) {};
+    virtual void ButtonUp(WiimoteButton /*aButton*/) {};
+};
+
+#endif // __WIIMOTEOBSERVER_H_

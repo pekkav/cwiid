@@ -28,21 +28,18 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <glib.h>
+#include <glibmm.h>
 #include <hildonmm.h>
 #include <libosso.h>
 #include <bluetooth/bluetooth.h>
 
-#include <cwiid.h>
 
+#include "wiimotehandler.h"
 #include "mainwindow.h"
-
-// Globals
-bdaddr_t bdaddr;
 
 // GetOpt
 #define OPTSTRING       "h"
-extern char *optarg;
+extern char* optarg;
 extern int optind, opterr, optopt;
 
 // Usage string
@@ -50,7 +47,7 @@ extern int optind, opterr, optopt;
 
 int
 main(int argc,
-     char *argv[])
+     char* argv[])
 {
     // Init Gtk
     Gtk::Main mainLoop(&argc, &argv);
@@ -63,16 +60,16 @@ main(int argc,
     // Init osso context
     osso_context_t* ossoContext = osso_initialize("wmgui-maemo",
                                                   APP_VERSION,
-                                                  TRUE,
+                                                  true,
                                                   NULL);
 
     if (!ossoContext) {
-        std::cerr << "osso_initialize() failed." << std::endl;
+        std::cerr << "Initializing osso context failed" << std::endl;
         exit(1);
     }
 
-    if (!g_thread_supported()) {
-        g_thread_init(NULL);
+    if (!Glib::thread_supported()) {
+        Glib::thread_init(NULL);
     }
 
     gdk_threads_init();
@@ -98,12 +95,25 @@ main(int argc,
         }
     }
 
+    // Get Wiimote handler
+    WiimoteHandler* wiimoteHandler = WiimoteHandler::GetInstance();
+    if (!wiimoteHandler) {
+        std::cerr << "Didn't get wiimote handler" << std::endl;
+        exit(1);
+    }
+
     // BDADDR
-    char *strAddr = NULL;
+    char* strAddr = NULL;
+    bdaddr_t* bdAddr = wiimoteHandler->GetBdAddr();
+    if (!bdAddr) {
+        std::cerr << "Didn't get bdaddr pointer from wiimote handler" << std::endl;
+        exit(1);
+    }
+
     if (optind < argc) {
-        if (str2ba(argv[optind], &bdaddr)) {
+        if (str2ba(argv[optind], bdAddr)) {
             std::cout << "Invalid bdaddr" << std::endl;
-            bdaddr = *BDADDR_ANY;
+            bacpy(bdAddr, BDADDR_ANY);
         }
         optind++;
         if (optind < argc) {
@@ -112,19 +122,26 @@ main(int argc,
             exit(1);
         }
     } else if ((strAddr = getenv (WIIMOTE_BDADDR)) != NULL) {
-        if (str2ba (strAddr, &bdaddr)) {
+        if (str2ba (strAddr, bdAddr)) {
             std::cout << "Invalid address in " << WIIMOTE_BDADDR << std::endl;
-            bdaddr = *BDADDR_ANY;
+            bacpy(bdAddr, BDADDR_ANY);
         }
     } else {
-        bdaddr = *BDADDR_ANY;
+        bacpy(bdAddr, BDADDR_ANY);
     }
 
+    // Create our window
     MainWindow mainWindow;
     Hildon::Program::get_instance()->add_window(mainWindow);
 
+    // Connect to Wiimote
+    wiimoteHandler->Connect();
+
+    // Run Gtk main loop
     mainLoop.run(mainWindow);
 
+    // Clean-up
+    WiimoteHandler::Release();
     osso_deinitialize(ossoContext);
     gdk_threads_leave();
 

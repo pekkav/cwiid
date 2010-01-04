@@ -16,24 +16,59 @@
  */
 
 #include <iostream>
-#include <hildon/hildon.h>
 
 #include "common.h"
 #include "mainwindow.h"
+#include "wiimotehandler.h"
 
-MainWindow::MainWindow()                           
+MainWindow::MainWindow() : mVBox(false, 0),
+                           mStatusLabel("No connection")
 {
+    mStatusLabel.show();
+    mVBox.pack_start(mStatusLabel);
     // Buttons
     mButtonFrame.show();
+    mVBox.pack_start(mButtonFrame);
 
     // Add widgets to the window
-    add(mButtonFrame);
+    add(mVBox);
 
     // Make everything visible
     show_all();
+
+    mHandler = WiimoteHandler::GetInstance();
+    mHandler->AddObserver(this);
 }
 
 MainWindow::~MainWindow()
 {
+    mHandler->RemoveObserver(this);
+    WiimoteHandler::Release();
+}
 
+void MainWindow::ConnectionStatus(ConnStatus aStatus)
+{
+    ULOG_DEBUG_F("%d", aStatus);
+
+    switch (aStatus) {
+        case ENotConnected: {
+            mStatusLabel.set_text("No connection");
+            break;
+        }
+        case EConnecting: {
+            mStatusLabel.set_text("Connecting...");
+            break;
+        }
+        case EConnected: {
+            mStatusLabel.set_text("Connected");
+            break;
+        }
+        case EConnectionError: {
+            mStatusLabel.set_text("Connection error");
+            break;
+        }
+        default: {
+            break;
+        }
+    }
 }

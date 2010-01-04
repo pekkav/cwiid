@@ -19,7 +19,7 @@ include @top_builddir@/defs.mak
 
 APP_NAME = wmgui-maemo
 
-SOURCES = main.cpp mainwindow.cpp buttonframe.cpp
+SOURCES = main.cpp mainwindow.cpp buttonframe.cpp wiimotehandler.cpp
 
 CFLAGS += @GTK_CFLAGS@ @HILDON_CFLAGS@ @OSSO_CFLAGS@ @HILDONMM_CFLAGS@ -I@top_builddir@/libcwiid
 LDFLAGS += -L@top_builddir@/libcwiid

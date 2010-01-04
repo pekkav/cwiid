@@ -20,7 +20,12 @@
 
 #include <hildonmm.h>
 
-class ButtonFrame : public Gtk::Frame
+#include "wiimoteobserver.h"
+
+class WiimoteHandler;
+
+class ButtonFrame : public Gtk::Frame,
+                    public IWiimoteObserver
 {
 public:
 
@@ -28,13 +33,18 @@ public:
     
     virtual ~ButtonFrame();
 
+    void ConnectionStatus(ConnStatus aStatus);
+
+    void ButtonDown(WiimoteButton aButton);
+    void ButtonUp(WiimoteButton aButton);
+
 protected:
 
 private:
 
     void AddButton(Gtk::Widget& aLabel, Gtk::EventBox& aEv, Gtk::Alignment& aAlign,
-                   uint aLeftAttach, uint aRightAttach,
-                   uint aTopAttach, uint aBottomAttach,
+                   unsigned int aLeftAttach, unsigned int aRightAttach,
+                   unsigned int aTopAttach, unsigned int aBottomAttach,
                    Gtk::AttachOptions aXOptions = Gtk::FILL | Gtk::EXPAND,
                    Gtk::AttachOptions aYOptions = Gtk::FILL | Gtk::EXPAND);
 
@@ -86,6 +96,8 @@ private:
     Gtk::Alignment m2Align;
     Gtk::EventBox m2Ev;
     Gtk::Label m2Label;
+
+    WiimoteHandler *mHandler;
 };
 
 #endif // __BUTTONFRAME_H_
