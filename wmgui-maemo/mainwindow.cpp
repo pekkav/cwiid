@@ -45,9 +45,12 @@ MainWindow::MainWindow() : mVBox(false, 0),
     mStatusBox.pack_start(mExtLabel);
     mVBox.pack_start(mStatusBox);
 
-    // Buttons
+    // Button and motion sensor frames
     mButtonFrame.show();
-    mVBox.pack_start(mButtonFrame);
+    mFrameBox.pack_start(mButtonFrame);
+    mMotionSensorFrame.show();
+    mFrameBox.pack_start(mMotionSensorFrame);
+    mVBox.pack_start(mFrameBox);
 
     // Add container to the window
     add(mVBox);

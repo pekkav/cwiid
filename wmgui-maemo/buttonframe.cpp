@@ -19,8 +19,10 @@
 #include "buttonframe.h"
 #include "wiimotehandler.h"
 
+#include <hildon/hildon.h>
+
 ButtonFrame::ButtonFrame() : Gtk::Frame("Buttons"),
-                             mTable(8, 3, true),
+                             mTable(8, 3, false),
                              mBLabel("B"),
                              mUpLabel("Up"),
                              mLeftLabel("Left"),
@@ -89,7 +91,12 @@ ButtonFrame::ButtonFrame() : Gtk::Frame("Buttons"),
               (Gtk::AttachOptions) (0));
 
     mTable.show();
-    add(mTable);
+
+    mAlign.show();
+    mAlign.set_padding(0, 0, HILDON_MARGIN_DEFAULT, HILDON_MARGIN_DEFAULT);
+    mAlign.add(mTable);
+
+    add(mAlign);
 
     mHandler = WiimoteHandler::GetInstance();
     mHandler->AddObserver(this);

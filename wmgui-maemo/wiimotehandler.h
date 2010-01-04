@@ -49,7 +49,16 @@ public:
 
     void NotifyBattery(unsigned int aBatteryLevel);
 
-    void NotifyExtension(cwiid_ext_type aExtType);
+    void NotifyExtension(IWiimoteObserver::WiimoteExtension aExtType);
+
+    void NotifyMotionData(unsigned int aXAcc,
+                          unsigned int aYAcc,
+                          unsigned int aZAcc,
+                          double aAcc,
+                          double aRoll,
+                          double aPitch);
+
+    void GetAccelerometerCalibration(struct acc_cal* aCal);
 
 private:
 
@@ -64,9 +73,11 @@ private:
 
     cwiid_wiimote_t* mWiimote;
 
-    cwiid_ext_type mExtType;
+    IWiimoteObserver::WiimoteExtension mExtType;
 
     bdaddr_t* mBdAddr;
+
+    struct acc_cal mWmCal;
 
     list<const IWiimoteObserver*> mObservers;
 };

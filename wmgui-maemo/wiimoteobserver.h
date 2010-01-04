@@ -60,6 +60,13 @@ public:
     };
 
     virtual void CurrentWiimoteExtension(WiimoteExtension /*aExtension*/) {};
+
+    virtual void MotionData(unsigned int /*aXAcc*/,
+                            unsigned int /*aYAcc*/,
+                            unsigned int /*aZAcc*/,
+                            double /*aAcc*/,
+                            double /*aRoll*/,
+                            double /*aPitch*/) {};
 };
 
 #endif // __WIIMOTEOBSERVER_H_

@@ -16,9 +16,12 @@
  */
 
 #include <gdk/gdk.h>
+#include <math.h>
 
 #include "common.h"
 #include "wiimotehandler.h"
+
+#define PI 3.14159265358979323
 
 WiimoteHandler* WiimoteHandler::mInstance = NULL;
 unsigned int WiimoteHandler::mRefCount = 0;
@@ -86,22 +89,25 @@ void WiimoteHandler::Connect()
         NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     } else {
         ULOG_DEBUG_F("Connected");
-        /*
-        if (cwiid_get_acc_cal(mWiimote, CWIID_EXT_NONE, &wm_cal)) {
-            message(GTK_MESSAGE_ERROR, "Unable to retrieve accelerometer "
-                    "calibration", GTK_WINDOW(winMain));
+        if (cwiid_get_acc_cal(mWiimote, CWIID_EXT_NONE, &mWmCal)) {
+            ULOG_DEBUG_F("Unable to retrieve accelerometer calibration");
         }
+
+        NotifyConnectionStatus(IWiimoteObserver::EConnected);
+
+        /*
         set_gui_state();
         set_report_mode();
         cwiid_enable(wiimote, CWIID_FLAG_MOTIONPLUS);
-        cwiid_request_status(wiimote);
         */
+
         uint8_t rpt_mode;    
-        rpt_mode = CWIID_RPT_STATUS | CWIID_RPT_BTN;
+        rpt_mode = CWIID_RPT_STATUS | CWIID_RPT_BTN | CWIID_RPT_ACC;
         if (cwiid_set_rpt_mode(mWiimote, rpt_mode)) {
             ULOG_DEBUG_F("Error setting report mode");
         }
-        NotifyConnectionStatus(IWiimoteObserver::EConnected);
+
+        cwiid_request_status(mWiimote);
     }
 
     if (resetAddr) {
@@ -180,43 +186,10 @@ void WiimoteHandler::NotifyBattery(unsigned int aBatteryLevel)
     }
 }
 
-void WiimoteHandler::NotifyExtension(cwiid_ext_type aExtType)
+void WiimoteHandler::NotifyExtension(IWiimoteObserver::WiimoteExtension aExtType)
 {
-    IWiimoteObserver::WiimoteExtension ext;
-
-    switch (mExtType) {
-        case CWIID_EXT_NONE: {
-            ext = IWiimoteObserver::ENone;
-            break;
-        }
-        case CWIID_EXT_NUNCHUK: {
-            ext = IWiimoteObserver::ENunchuck;
-            break;
-        }
-        case CWIID_EXT_CLASSIC: {
-            ext = IWiimoteObserver::EClassic;
-            break;
-        }
-        case CWIID_EXT_BALANCE: {
-            ext = IWiimoteObserver::EBalance;
-            break;
-        }
-        case CWIID_EXT_MOTIONPLUS: {
-            ext = IWiimoteObserver::EMotionPlus;
-            break;
-        }
-        case CWIID_EXT_UNKNOWN: {
-            ext = IWiimoteObserver::EUnknown;
-            break;
-        }
-        default: {
-            ULOG_DEBUG_F("Unhandled extenstion type");
-            break;
-        }
-    }
-
-    if (aExtType == CWIID_EXT_NUNCHUK &&
-        mExtType != CWIID_EXT_NUNCHUK) {
+    if (aExtType == IWiimoteObserver::ENunchuck &&
+        mExtType != IWiimoteObserver::ENunchuck) {
         /*
         if (cwiid_get_acc_cal(wiimote, CWIID_EXT_NUNCHUK, &nc_cal)) {
                 message(GTK_MESSAGE_ERROR,
@@ -232,12 +205,36 @@ void WiimoteHandler::NotifyExtension(cwiid_ext_type aExtType)
     list<const IWiimoteObserver*>::iterator i;
     for (i = mObservers.begin(); i != mObservers.end(); ++i) {
         IWiimoteObserver* observer = (IWiimoteObserver*)*i;
-        observer->CurrentWiimoteExtension(ext);
+        observer->CurrentWiimoteExtension(mExtType);
     }
 }
 
+void WiimoteHandler::NotifyMotionData(unsigned int aXAcc,
+                                      unsigned int aYAcc,
+                                      unsigned int aZAcc,
+                                      double aAcc,
+                                      double aRoll,
+                                      double aPitch)
+{
+    list<const IWiimoteObserver*>::iterator i;
+    for (i = mObservers.begin(); i != mObservers.end(); ++i) {
+        IWiimoteObserver* observer = (IWiimoteObserver*)*i;
+        observer->MotionData(aXAcc, aYAcc, aZAcc, aAcc, aRoll, aPitch);
+    }
+}
+
+void WiimoteHandler::GetAccelerometerCalibration(struct acc_cal* aCal)
+{
+    aCal->zero[CWIID_X] = mWmCal.zero[CWIID_X];
+    aCal->zero[CWIID_Y] = mWmCal.zero[CWIID_Y];
+    aCal->zero[CWIID_Z] = mWmCal.zero[CWIID_Z];
+    aCal->one[CWIID_X] = mWmCal.one[CWIID_X];
+    aCal->one[CWIID_Y] = mWmCal.one[CWIID_Y];
+    aCal->one[CWIID_Z] = mWmCal.one[CWIID_Z];
+}
+
 WiimoteHandler::WiimoteHandler() : mWiimote(NULL),
-                                   mExtType(CWIID_EXT_NONE)
+                                   mExtType(IWiimoteObserver::ENone)
                                    
 {
     mBdAddr = (bdaddr_t*) (bt_malloc(sizeof(bdaddr_t)));
@@ -335,7 +332,82 @@ void cwiid_status(struct cwiid_status_mesg *mesg)
                                                 CWIID_BATTERY_MAX);
 
     handler->NotifyBattery(batteryLevel);
-    handler->NotifyExtension(mesg->ext_type);
+
+    IWiimoteObserver::WiimoteExtension ext;
+
+    switch (mesg->ext_type) {
+        case CWIID_EXT_NONE: {
+            ext = IWiimoteObserver::ENone;
+            break;
+        }
+        case CWIID_EXT_NUNCHUK: {
+            ext = IWiimoteObserver::ENunchuck;
+            break;
+        }
+        case CWIID_EXT_CLASSIC: {
+            ext = IWiimoteObserver::EClassic;
+            break;
+        }
+        case CWIID_EXT_BALANCE: {
+            ext = IWiimoteObserver::EBalance;
+            break;
+        }
+        case CWIID_EXT_MOTIONPLUS: {
+            ext = IWiimoteObserver::EMotionPlus;
+            break;
+        }
+        case CWIID_EXT_UNKNOWN: {
+            ext = IWiimoteObserver::EUnknown;
+            break;
+        }
+        default: {
+            ULOG_DEBUG_F("Unhandled extenstion type");
+            break;
+        }
+    }
+
+    handler->NotifyExtension(ext);
+
+    WiimoteHandler::Release();
+}
+
+void cwiid_acc(struct cwiid_acc_mesg *mesg)
+{
+    WiimoteHandler *handler = WiimoteHandler::GetInstance();
+
+    double acc = 0;
+    double roll = 0;
+    double pitch = 0;
+    double aX = 0;
+    double aY = 0;
+    double aZ = 0;
+
+    struct acc_cal cal;
+    handler->GetAccelerometerCalibration(&cal);
+
+    aX = ((double)mesg->acc[CWIID_X] - cal.zero[CWIID_X]) /
+         (cal.one[CWIID_X] - cal.zero[CWIID_X]);
+    aY = ((double)mesg->acc[CWIID_Y] - cal.zero[CWIID_Y]) /
+         (cal.one[CWIID_Y] - cal.zero[CWIID_Y]);
+    aZ = ((double)mesg->acc[CWIID_Z] - cal.zero[CWIID_Z]) /
+         (cal.one[CWIID_Z] - cal.zero[CWIID_Z]);
+
+    acc = sqrt(pow(aX, 2) + pow(aY, 2) + pow(aZ,2));
+
+    roll = atan(aX / aZ);
+    if (aZ <= 0.0) {
+        roll += PI * ((aX > 0.0) ? 1 : -1);
+    }
+    roll *= -1;
+
+    pitch = atan(aY / aZ * cos(roll));
+
+    handler->NotifyMotionData(mesg->acc[CWIID_X],
+                              mesg->acc[CWIID_Y],
+                              mesg->acc[CWIID_Z],
+                              acc,
+                              roll,
+                              pitch);
 
     WiimoteHandler::Release();
 }
@@ -343,14 +415,9 @@ void cwiid_status(struct cwiid_status_mesg *mesg)
 void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
                     union cwiid_mesg mesg_array[], struct timespec *timestamp)
 {
-    int i;
-//    char battery[BATTERY_STR_LEN];
-//    char *ext_str;
-    static enum cwiid_ext_type ext_type = CWIID_EXT_NONE;
-
     gdk_threads_enter();
 
-    for (i = 0; i < mesg_count; i++) {
+    for (int i = 0; i < mesg_count; i++) {
         switch (mesg_array[i].type) {
             case CWIID_MESG_STATUS: {
                 cwiid_status(&mesg_array[i].status_mesg);
@@ -361,7 +428,7 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
                 break;
             }
             case CWIID_MESG_ACC: {
-                //cwiid_acc(&mesg_array[i].acc_mesg);
+                cwiid_acc(&mesg_array[i].acc_mesg);
                 break;
             }
             case CWIID_MESG_IR: {

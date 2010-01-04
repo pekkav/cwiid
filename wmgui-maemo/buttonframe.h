@@ -52,6 +52,7 @@ private:
 
     // Child widgets
     Gtk::Table mTable;
+    Gtk::Alignment mAlign;
 
     Gtk::Alignment mBAlign;
     Gtk::EventBox mBEv;

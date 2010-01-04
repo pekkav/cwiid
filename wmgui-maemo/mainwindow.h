@@ -21,6 +21,7 @@
 #include <hildonmm.h>
 
 #include "buttonframe.h"
+#include "motionsensorframe.h"
 #include "wiimoteobserver.h"
 
 class WiimoteHandler;
@@ -56,7 +57,9 @@ private:
     Gtk::Label mStatusLabel;
     Gtk::Label mExtLabel;
 
+    Gtk::HBox mFrameBox;
     ButtonFrame mButtonFrame;
+    MotionSensorFrame mMotionSensorFrame;
 
     // App menu widgets
     Hildon::AppMenu mAppMenu;
