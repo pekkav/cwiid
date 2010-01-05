@@ -98,6 +98,18 @@ void MotionSensorFrame::ConnectionStatus(ConnStatus aStatus)
     mRollValue.set_sensitive(sensitive);
     mPitchLabel.set_sensitive(sensitive);
     mPitchValue.set_sensitive(sensitive);
+
+    if (!sensitive) {
+        mXValue.set_text("0");
+        mXProgr.set_fraction(0);
+        mYValue.set_text("0");
+        mYProgr.set_fraction(0);
+        mZValue.set_text("0");
+        mZProgr.set_fraction(0);
+        mAccValue.set_text("0");
+        mRollValue.set_text("0");
+        mPitchValue.set_text("0");
+    }
 }
 
 void MotionSensorFrame::MotionData(unsigned int aXAcc,
@@ -107,8 +119,26 @@ void MotionSensorFrame::MotionData(unsigned int aXAcc,
                                    double aRoll,
                                    double aPitch)
 {
-    ULOG_DEBUG_F("%d, %d, %d, %f, %f, %f",
-                 aXAcc, aYAcc, aZAcc, aAcc, aRoll, aPitch);
+    Glib::ustring xVal = Glib::ustring::compose("%1", aXAcc);
+    mXValue.set_text(xVal);
+    mXProgr.set_fraction((double)aXAcc / 0xFF);
+
+    Glib::ustring yVal = Glib::ustring::compose("%1", aYAcc);
+    mYValue.set_text(yVal);
+    mYProgr.set_fraction((double)aYAcc / 0xFF);
+
+    Glib::ustring zVal = Glib::ustring::compose("%1", aZAcc);
+    mZValue.set_text(zVal);
+    mZProgr.set_fraction((double)aZAcc / 0xFF);
+
+    Glib::ustring accVal = Glib::ustring::compose("%1", aAcc);
+    mAccValue.set_text(accVal);
+
+    Glib::ustring rollVal = Glib::ustring::compose("%1", aRoll);
+    mRollValue.set_text(rollVal);
+
+    Glib::ustring pitchVal = Glib::ustring::compose("%1", aPitch);
+    mPitchValue.set_text(pitchVal);
 }
 
 void MotionSensorFrame::AddAxis(Gtk::Label& aLabel,
@@ -125,7 +155,7 @@ void MotionSensorFrame::AddAxis(Gtk::Label& aLabel,
 
     aValue.set_sensitive(false);
     aValue.set_alignment(Gtk::ALIGN_LEFT);
-    aValue.set_size_request(35, -1);
+    aValue.set_size_request(55, -1);
     aValue.show();
     mTable.attach(aValue, 1, 2, aRow, aRow + 1,
                   (Gtk::AttachOptions) (0),
@@ -134,7 +164,7 @@ void MotionSensorFrame::AddAxis(Gtk::Label& aLabel,
     aProgrBar.set_sensitive(false);
     aProgrBar.show();
     mTable.attach(aProgrBar, 2, 3, aRow, aRow + 1,
-                  (Gtk::AttachOptions) (Gtk::EXPAND | Gtk::FILL),
+                  (Gtk::AttachOptions) (0),
                   (Gtk::AttachOptions) (0));
 }
 
@@ -143,12 +173,15 @@ void MotionSensorFrame::AddLabelAndValue(Gtk::Label& aLabel,
                                          unsigned int aRow)
 {
     aLabel.set_sensitive(false);
+    aLabel.set_alignment(Gtk::ALIGN_LEFT);
     aLabel.show();
     mTable.attach(aLabel, 0, 1, aRow, aRow + 1,
                   (Gtk::AttachOptions) (0),
                   (Gtk::AttachOptions) (0));
 
     aValue.set_sensitive(false);
+    aValue.set_alignment(Gtk::ALIGN_LEFT);
+    aValue.set_size_request(55, -1);
     aValue.show();
     mTable.attach(aValue, 1, 2, aRow, aRow + 1,
                   (Gtk::AttachOptions) (0),
