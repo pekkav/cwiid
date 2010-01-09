@@ -15,7 +15,7 @@ DEPS    = $(SOURCES:.c=.d)
 
 CFLAGS += -fpic
 
-all: static shared
+all: $(BUILT_SOURCES) static shared
 
 static: $(STATIC_LIB)
 

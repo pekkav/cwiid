@@ -5,8 +5,9 @@ include @top_builddir@/defs.mak
 LIB_NAME = cwiid
 MAJOR_VER = 1
 MINOR_VER = 0
+BUILT_SOURCES = marshal.h marshal.c
 SOURCES = bluetooth.c command.c connect.c interface.c process.c state.c \
-          thread.c util.c backgroundconnect.c
+          thread.c util.c backgroundconnect.c marshal.c
 CFLAGS += @DBUSGLIB_CFLAGS@
 LDLIBS += -lbluetooth -lpthread -lrt @DBUSGLIB_LIBS@
 LIB_INST_DIR = @libdir@
@@ -14,6 +15,12 @@ INC_INST_DIR = @includedir@
 DEST_PKG_CONFIG_INST_DIR = $(ROOTDIR)@libdir@/pkgconfig
 
 include $(COMMON)/include/lib.mak
+
+marshal.h: marshal.list
+	@GLIB_GENMARSHAL@ --prefix=marshal $< --header > $@
+
+marshal.c: marshal.list
+	@GLIB_GENMARSHAL@ --prefix=marshal $< --body > $@
 
 $(SHARED_LIB): $(SO_NAME) $(LINK_NAME)
 
@@ -38,7 +45,10 @@ clean: remove_links
 remove_links:
 	rm -f $(SO_NAME) $(LINK_NAME)
 
-distclean: clean
+clean_built_sources:
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+
+distclean: clean clean_built_sources
 	rm Makefile cwiid.pc
 
 .PHONY: distclean clean make_links remove_links
