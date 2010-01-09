@@ -325,6 +325,9 @@ cwiid_wiimote_t *cwiid_open(bdaddr_t *bdaddr, int flags);
 cwiid_wiimote_t *cwiid_open_timeout(bdaddr_t *bdaddr, int flags, int timeout);
 int cwiid_close(cwiid_wiimote_t *wiimote);
 
+/* Search and connect Wiimotes at the background */
+int cwiid_start_background_seach(/*cwiid_wiimote_connected_callback_t *callback*/);
+
 int cwiid_get_id(cwiid_wiimote_t *wiimote);
 int cwiid_set_data(cwiid_wiimote_t *wiimote, const void *data);
 const void *cwiid_get_data(cwiid_wiimote_t *wiimote);

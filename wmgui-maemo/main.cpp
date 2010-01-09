@@ -134,6 +134,9 @@ main(int argc,
     MainWindow mainWindow;
     Hildon::Program::get_instance()->add_window(mainWindow);
 
+    // Start cwiid background search for Wiimotes
+    cwiid_start_background_seach();
+
     // Run Gtk main loop
     mainLoop.run(mainWindow);
 
