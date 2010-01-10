@@ -1,4 +1,5 @@
 #Copyright (C) 2006 L. Donnie Smith
+#Copyright (C) 2010 Pekka Vanhoja
 
 include @top_builddir@/defs.mak
 

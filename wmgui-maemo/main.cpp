@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2009  Pekka Vanhoja <pekka.vanhoja@gmail.com>
+ *  Copyright (C) 2010  Pekka Vanhoja <pekka.vanhoja@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 #define APP_NAME        "Wiimote GUI for maemo"
 #define APP_VERSION     PACKAGE_VERSION
-#define APP_COPYRIGHT   "Copyright (C) 2009 Pekka Vanhoja " \
+#define APP_COPYRIGHT   "Copyright (C) 2010 Pekka Vanhoja " \
                         "<pekka.vanhoja@gmail.com>"
 #define APP_COMMENTS    "Wiimote GUI"
 
