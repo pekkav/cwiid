@@ -233,6 +233,62 @@ void WiimoteHandler::GetAccelerometerCalibration(struct acc_cal* aCal)
     aCal->one[CWIID_Z] = mWmCal.one[CWIID_Z];
 }
 
+void WiimoteHandler::CWiidBackgrounSearchCallback(cwiid_wiimote_t* aWiimote,
+                                                  int aError,
+                                                  const char *aErrorMsg)
+{
+    ULOG_DEBUG_F("aWiimote: %p, aError: %d, aErrorMsg: %s",
+                 aWiimote, aError, aErrorMsg);
+
+    WiimoteHandler* instance = WiimoteHandler::GetInstance();
+
+    if (!aError) {
+        if (aWiimote) {
+            instance->WiimoteConnected(aWiimote);
+        }
+    }
+
+    WiimoteHandler::Release();
+}
+
+void WiimoteHandler::WiimoteConnected(cwiid_wiimote_t* aWiimote)
+{
+    Disconnect();
+
+    mWiimote = aWiimote;
+
+    if (cwiid_set_mesg_callback(mWiimote, &cwiid_callback)) {
+        ULOG_DEBUG_F("Error setting callback");
+        if (cwiid_close(mWiimote)) {
+            ULOG_DEBUG_F("Error on disconnect");
+        }
+        mWiimote = NULL;
+        NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
+        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
+    } else {
+        ULOG_DEBUG_F("Connected");
+        if (cwiid_get_acc_cal(mWiimote, CWIID_EXT_NONE, &mWmCal)) {
+            ULOG_DEBUG_F("Unable to retrieve accelerometer calibration");
+        }
+
+        NotifyConnectionStatus(IWiimoteObserver::EConnected);
+
+        /*
+        set_gui_state();
+        set_report_mode();
+        cwiid_enable(wiimote, CWIID_FLAG_MOTIONPLUS);
+        */
+
+        uint8_t rpt_mode;    
+        rpt_mode = CWIID_RPT_STATUS | CWIID_RPT_BTN | CWIID_RPT_ACC;
+        if (cwiid_set_rpt_mode(mWiimote, rpt_mode)) {
+            ULOG_DEBUG_F("Error setting report mode");
+        }
+
+        cwiid_request_status(mWiimote);
+    }
+}
+
 WiimoteHandler::WiimoteHandler() : mWiimote(NULL),
                                    mExtType(IWiimoteObserver::ENone)
                                    

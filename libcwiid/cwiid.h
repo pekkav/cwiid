@@ -300,6 +300,10 @@ typedef void cwiid_mesg_callback_t(cwiid_wiimote_t *, int,
                                    union cwiid_mesg [], struct timespec *);
 typedef void cwiid_err_t(cwiid_wiimote_t *, const char *, va_list ap);
 
+typedef void cwiid_background_search_callback_t(cwiid_wiimote_t *,
+                                                int,
+                                                const char *);
+
 /* get_bdinfo */
 #define BT_NO_WIIMOTE_FILTER 0x01
 #define BT_NAME_LEN 32
@@ -326,7 +330,8 @@ cwiid_wiimote_t *cwiid_open_timeout(bdaddr_t *bdaddr, int flags, int timeout);
 int cwiid_close(cwiid_wiimote_t *wiimote);
 
 /* Search and connect Wiimotes at the background */
-int cwiid_start_background_seach(/*cwiid_wiimote_connected_callback_t *callback*/);
+int cwiid_start_background_seach(cwiid_background_search_callback_t *callback);
+void cwiid_stop_background_searh();
 
 int cwiid_get_id(cwiid_wiimote_t *wiimote);
 int cwiid_set_data(cwiid_wiimote_t *wiimote, const void *data);

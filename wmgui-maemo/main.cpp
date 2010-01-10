@@ -135,12 +135,13 @@ main(int argc,
     Hildon::Program::get_instance()->add_window(mainWindow);
 
     // Start cwiid background search for Wiimotes
-    cwiid_start_background_seach();
+    cwiid_start_background_seach(&WiimoteHandler::CWiidBackgrounSearchCallback);
 
     // Run Gtk main loop
     mainLoop.run(mainWindow);
 
     // Clean-up
+    cwiid_stop_background_searh();
     WiimoteHandler::Release();
     osso_deinitialize(ossoContext);
     gdk_threads_leave();

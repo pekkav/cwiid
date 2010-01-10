@@ -60,6 +60,12 @@ public:
 
     void GetAccelerometerCalibration(struct acc_cal* aCal);
 
+    static void CWiidBackgrounSearchCallback(cwiid_wiimote_t* aWiimote,
+                                             int aError,
+                                             const char *aErrorMsg);
+
+    void WiimoteConnected(cwiid_wiimote_t* aWiimote);
+
 private:
 
     WiimoteHandler();

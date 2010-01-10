@@ -3,7 +3,7 @@ Section: utils
 Priority: extra
 Maintainer: Pekka Vanhoja <pekka.vanhoja@gmail.com>
 XS-Python-Version: all
-Build-Depends: cdbs (>= 0.4.23-1.1), debhelper (>= 5), python-all-dev, python, python-support, libbluetooth3-dev, libgtk2.0-dev, flex, bison, libhildon1-dev, libosso-dev, libhildonmm-dev
+Build-Depends: cdbs (>= 0.4.23-1.1), debhelper (>= 5), python-all-dev, python, python-support, libbluetooth3-dev, libgtk2.0-dev, flex, bison, libhildon1-dev, libosso-dev, libhildonmm-dev, libdbus-glib-1-dev
 Homepage: http://github.com/pekkav/cwiid
 Standards-Version: 3.7.2
 
