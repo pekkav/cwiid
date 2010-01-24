@@ -23,8 +23,16 @@
 #include <list>
 
 #include "wiimoteobserver.h"
+#include "wiimote.h"
 
 using namespace std;
+
+class IWiimoteHandlerObserver
+{
+public:
+
+    virtual void WiimoteConnected(Wiimote* aConnectedWiimote) = 0;
+};
 
 class WiimoteHandler
 {
@@ -39,9 +47,9 @@ public:
     void Connect();
     void Disconnect();
 
-    void AddObserver(const IWiimoteObserver* aObserver);
-    void RemoveObserver(const IWiimoteObserver* aObserver);
-
+    void AddObserver(const IWiimoteHandlerObserver* aObserver);
+    void RemoveObserver(const IWiimoteHandlerObserver* aObserver);
+/*
     void NotifyConnectionStatus(IWiimoteObserver::ConnStatus aStatus);
 
     void NotifyButtonDown(IWiimoteObserver::WiimoteButton aButton);
@@ -59,12 +67,14 @@ public:
                           double aPitch);
 
     void GetAccelerometerCalibration(struct acc_cal* aCal);
-
+*/
     static void CWiidBackgrounSearchCallback(cwiid_wiimote_t* aWiimote,
                                              int aError,
                                              const char *aErrorMsg);
 
     void WiimoteConnected(cwiid_wiimote_t* aWiimote);
+
+    void WiimoteDisconnected(cwiid_wiimote_t* aWiimote);
 
 private:
 
@@ -85,7 +95,9 @@ private:
 
     struct acc_cal mWmCal;
 
-    list<const IWiimoteObserver*> mObservers;
+    list<const IWiimoteHandlerObserver*> mObservers;
+
+    list<Wiimote*> mConnectedWiimotes;
 };
 
 #endif // __WIIMOTEHANDLER_H_

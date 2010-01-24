@@ -22,7 +22,7 @@
 
 #include "wiimoteobserver.h"
 
-class WiimoteHandler;
+class Wiimote;
 
 class ButtonFrame : public Gtk::Frame,
                     public IWiimoteObserver
@@ -33,10 +33,13 @@ public:
     
     virtual ~ButtonFrame();
 
-    void ConnectionStatus(ConnStatus aStatus);
+    void ConnectionStatus(Wiimote* aWiimote, ConnStatus aStatus);
 
     void ButtonDown(WiimoteButton aButton);
     void ButtonUp(WiimoteButton aButton);
+
+    void SetWiimote(Wiimote *aWiimote);
+    inline bool HasWiimote() const { return mWiimote; };
 
 protected:
 
@@ -48,11 +51,16 @@ private:
                    Gtk::AttachOptions aXOptions = Gtk::FILL | Gtk::EXPAND,
                    Gtk::AttachOptions aYOptions = Gtk::FILL | Gtk::EXPAND);
 
+    void OnDisconnectButtonClicked();
+
 private:
 
     // Child widgets
-    Gtk::Table mTable;
     Gtk::Alignment mAlign;
+
+    Gtk::VBox mVBox;
+
+    Gtk::Table mTable;
 
     Gtk::Alignment mBAlign;
     Gtk::EventBox mBEv;
@@ -98,7 +106,9 @@ private:
     Gtk::EventBox m2Ev;
     Gtk::Label m2Label;
 
-    WiimoteHandler *mHandler;
+    Hildon::Button mDisconnectButton;
+
+    Wiimote *mWiimote;
 };
 
 #endif // __BUTTONFRAME_H_

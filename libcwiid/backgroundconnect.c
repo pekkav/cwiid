@@ -24,8 +24,8 @@
 #include "cwiid_internal.h"
 #include "marshal.h"
 
-//#define OSSOLOG_COMPILE
-//#define OSSOLOG_STDOUT
+/*#define OSSOLOG_COMPILE*/
+/*#define OSSOLOG_STDOUT*/
 #include <osso-log.h>
 
 /* BlueZ DBus API strings */
@@ -43,9 +43,17 @@ typedef struct {
     gchar *default_adapter;
     GHashTable *adapter_properties;
     bdaddr_t *new_wiimote_addr;
-    GList *connected_wiimotes;
+    GHashTable *connected_wiimotes;
     gboolean adapter_discovering;
+    GSList *opened_wiimotes;
+    GSList *wiimotes_opening;
 } BackgroundSearchData;
+
+typedef struct {
+    BackgroundSearchData *bg_data;
+    gchar *address;
+    bdaddr_t bd_addr;
+} WiimoteOpenData;
 
 static BackgroundSearchData *search_data = NULL;
 
@@ -388,19 +396,32 @@ static void setup_device_signals(BackgroundSearchData *data)
  */
 static gboolean open_wiimote(gpointer user_data)
 {
-    BackgroundSearchData *data = (BackgroundSearchData *)user_data;
-
-    cwiid_wiimote_t *wiimote = cwiid_open(data->new_wiimote_addr, CWIID_FLAG_MESG_IFC);
+    WiimoteOpenData *data = (WiimoteOpenData *)user_data;
+    BackgroundSearchData *bg_data = data->bg_data;
+    
+    cwiid_wiimote_t *wiimote = cwiid_open(&data->bd_addr, CWIID_FLAG_MESG_IFC);
     ULOG_DEBUG_F("wiimote: %p", wiimote);
 
     if (wiimote) {
-        data->callback(wiimote, 0, NULL);
+        bg_data->callback(wiimote, 0, NULL);
+        bg_data->opened_wiimotes = g_slist_append(bg_data->opened_wiimotes, wiimote);
     } else {
-        data->callback(NULL, -1, "Could not connect to a Wiimote");
+        data->bg_data->callback(NULL, -1, "Could not connect to a Wiimote");
+        g_free(data->address);
+        g_free(data);
+    }
+
+    GSList *item = g_slist_find_custom(bg_data->wiimotes_opening,
+                                       data->address,
+                                       g_strcmp0);
+    if (item) {
+        g_free(item->data);
+        bg_data->wiimotes_opening = g_slist_delete_link(bg_data->wiimotes_opening,
+                                                        item);
     }
 
     /* Start device discovery again */
-    if (!g_idle_add(start_device_discovery, data)) {
+    if (!g_idle_add(start_device_discovery, data->bg_data)) {
         /* TODO: Error handling */
     }
 
@@ -427,8 +448,14 @@ static void clean_data(BackgroundSearchData *data)
         bt_free(data->new_wiimote_addr);
     }
     if (data->connected_wiimotes) {
-        g_list_foreach(data->connected_wiimotes, g_free, NULL);
-        g_list_free(data->connected_wiimotes);
+        g_hash_table_unref(data->connected_wiimotes);
+    }
+    if (data->opened_wiimotes) {
+        g_slist_free(data->opened_wiimotes);
+    }
+    if (data->wiimotes_opening) {
+        g_slist_foreach(data->wiimotes_opening, g_free, NULL);
+        g_slist_free(data->wiimotes_opening);
     }
 }
 
@@ -471,14 +498,40 @@ static void device_found(DBusGProxy *adapter,
 
     BackgroundSearchData *data = (BackgroundSearchData *)user_data;
 
+    if (data->connected_wiimotes) {
+        guint size = g_hash_table_size(data->connected_wiimotes);
+        ULOG_DEBUG_F("Check for connected wiimotes count: %d", size);
+        if (size >= 4) {
+            return;
+        }
+    }
+
+    if (data->wiimotes_opening) {
+        GSList *item = g_slist_find_custom(data->wiimotes_opening,
+                                           address,
+                                           g_strcmp0);
+        ULOG_DEBUG_F("Check for ongoing openings: %p", item);
+        if (item) {
+            return;
+        }
+    }
+
     GValue *name_val = g_hash_table_lookup(properties, "Name");
     gchar *name = name_val ? g_value_get_string(name_val) : NULL;
     ULOG_DEBUG_F("Device name: %s", name);
 
-    if (g_strcmp0(name, WIIMOTE_NAME) == 0 &&
-        g_list_length(data->connected_wiimotes) < 4) {
-        if (str2ba(address, data->new_wiimote_addr)) {
+    
+    if (g_strcmp0(name, WIIMOTE_NAME) == 0) {
+
+        WiimoteOpenData *open_data = g_try_new0(WiimoteOpenData, 1);
+        if (!open_data) {
+            /* TODO: Error handling */
+            return;
+        }
+
+        if (str2ba(address, &open_data->bd_addr)) {
             ULOG_ERR_F("Invalid bdaddr");
+            g_free(open_data);
         } else {
             /* Stop device discovery while opening the wiimote */
             /* TODO: Error handling */
@@ -487,7 +540,13 @@ static void device_found(DBusGProxy *adapter,
                               NULL,
                               G_TYPE_INVALID,
                               G_TYPE_INVALID);
-            if (!g_idle_add(open_wiimote, data)) {
+
+            open_data->bg_data = data;
+            open_data->address = g_strdup(address);
+
+            data->wiimotes_opening = g_slist_prepend(data->wiimotes_opening,
+                                                     g_strdup(address));
+            if (!g_idle_add(open_wiimote, open_data)) {
                 /* TODO: Error handling */
             }
         }
@@ -517,8 +576,25 @@ static void device_created(DBusGProxy *adapter,
 
     BackgroundSearchData *data = (BackgroundSearchData *)user_data;
 
-    data->connected_wiimotes = g_list_prepend(data->connected_wiimotes,
-                                              g_strdup(object_path));
+    if (data->connected_wiimotes &&
+        g_hash_table_lookup(data->connected_wiimotes, object_path)) {
+        ULOG_DEBUG_F("Already in connected_wiimotes");
+        return;
+    }
+
+    if (!data->connected_wiimotes) {
+        data->connected_wiimotes = g_hash_table_new_full(g_str_hash,
+                                                         g_str_equal,
+                                                         g_free,
+                                                         NULL);
+    }
+
+    g_hash_table_insert(data->connected_wiimotes,
+                        g_strdup(object_path),
+                        data->opened_wiimotes->data);
+
+    data->opened_wiimotes = g_slist_delete_link(data->opened_wiimotes,
+                                                data->opened_wiimotes);
 }
 
 /**
@@ -533,11 +609,10 @@ static void device_removed(DBusGProxy *adapter,
 
     BackgroundSearchData *data = (BackgroundSearchData *)user_data;
 
-    GList *item = NULL;
+    gpointer value = NULL;
     if (data->connected_wiimotes &&
-        (item = g_list_find(data->connected_wiimotes, object_path)) != NULL) {
-        g_free(item->data);
-        data->connected_wiimotes = g_list_delete_link(data->connected_wiimotes,
-                                                      item);
+        (value = g_hash_table_lookup(data->connected_wiimotes, object_path)) != NULL) {
+        data->callback(value, -1, "Disconnected");
+        g_hash_table_remove(data->connected_wiimotes, object_path);
     }
 }

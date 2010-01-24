@@ -18,6 +18,8 @@
 #ifndef __WIIMOTEOBSERVER_H_
 #define __WIIMOTEOBSERVER_H_
 
+class Wiimote;
+
 class IWiimoteObserver
 {
 public:
@@ -29,7 +31,7 @@ public:
         EConnectionError
     };
 
-    virtual void ConnectionStatus(ConnStatus /*aStatus*/) {};
+    virtual void ConnectionStatus(Wiimote* /*aWiimote*/, ConnStatus /*aStatus*/) {};
 
     enum WiimoteButton {
         EUp = 0,

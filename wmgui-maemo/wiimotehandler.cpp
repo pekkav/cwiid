@@ -20,6 +20,7 @@
 
 #include "common.h"
 #include "wiimotehandler.h"
+#include "wiimote.h"
 
 #define PI 3.14159265358979323
 
@@ -65,6 +66,7 @@ void WiimoteHandler::SetBdAddr(const bdaddr_t* aBdAddr)
 
 void WiimoteHandler::Connect()
 {
+#if 0
     bool resetAddr = false;
 
     if (bacmp(mBdAddr, BDADDR_ANY) == 0) {
@@ -73,27 +75,27 @@ void WiimoteHandler::Connect()
 
     ULOG_DEBUG_F("resetAddr: %d", resetAddr);
 
-    NotifyConnectionStatus(IWiimoteObserver::EConnecting);
+//    NotifyConnectionStatus(IWiimoteObserver::EConnecting);
 
     if ((mWiimote = cwiid_open(mBdAddr, CWIID_FLAG_MESG_IFC)) == NULL) {
         ULOG_DEBUG_F("Unable to connect");
-        NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
-        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
+//        NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
+//        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     } else if (cwiid_set_mesg_callback(mWiimote, &cwiid_callback)) {
         ULOG_DEBUG_F("Error setting callback");
         if (cwiid_close(mWiimote)) {
             ULOG_DEBUG_F("Error on disconnect");
         }
         mWiimote = NULL;
-        NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
-        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
+//        NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
+//        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     } else {
         ULOG_DEBUG_F("Connected");
         if (cwiid_get_acc_cal(mWiimote, CWIID_EXT_NONE, &mWmCal)) {
             ULOG_DEBUG_F("Unable to retrieve accelerometer calibration");
         }
 
-        NotifyConnectionStatus(IWiimoteObserver::EConnected);
+//        NotifyConnectionStatus(IWiimoteObserver::EConnected);
 
         /*
         set_gui_state();
@@ -113,6 +115,7 @@ void WiimoteHandler::Connect()
     if (resetAddr) {
         bacpy(mBdAddr, BDADDR_ANY);
     }
+#endif
 }
 
 void WiimoteHandler::Disconnect()
@@ -122,13 +125,13 @@ void WiimoteHandler::Disconnect()
             ULOG_DEBUG_F("Error on disconnect");
         }
         mWiimote = NULL;
-        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
+//        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
     }
 }
 
-void WiimoteHandler::AddObserver(const IWiimoteObserver* aObserver)
+void WiimoteHandler::AddObserver(const IWiimoteHandlerObserver* aObserver)
 {
-    list<const IWiimoteObserver*>::iterator i;
+    list<const IWiimoteHandlerObserver*>::iterator i;
     for (i = mObservers.begin(); i != mObservers.end(); ++i) {
         if (*i == aObserver) {
             ULOG_DEBUG_F("Observer %p already added", aObserver);
@@ -139,9 +142,9 @@ void WiimoteHandler::AddObserver(const IWiimoteObserver* aObserver)
     mObservers.push_back(aObserver);
 }
 
-void WiimoteHandler::RemoveObserver(const IWiimoteObserver* aObserver)
+void WiimoteHandler::RemoveObserver(const IWiimoteHandlerObserver* aObserver)
 {
-    list<const IWiimoteObserver*>::iterator i;
+    list<const IWiimoteHandlerObserver*>::iterator i;
     for (i = mObservers.begin(); i != mObservers.end(); ++i) {
         if (*i == aObserver) {
             mObservers.erase(i);
@@ -149,7 +152,7 @@ void WiimoteHandler::RemoveObserver(const IWiimoteObserver* aObserver)
         }
     }
 }
-
+#if 0
 void WiimoteHandler::NotifyConnectionStatus(IWiimoteObserver::ConnStatus aStatus)
 {
     list<const IWiimoteObserver*>::iterator i;
@@ -232,6 +235,7 @@ void WiimoteHandler::GetAccelerometerCalibration(struct acc_cal* aCal)
     aCal->one[CWIID_Y] = mWmCal.one[CWIID_Y];
     aCal->one[CWIID_Z] = mWmCal.one[CWIID_Z];
 }
+#endif
 
 void WiimoteHandler::CWiidBackgrounSearchCallback(cwiid_wiimote_t* aWiimote,
                                                   int aError,
@@ -246,6 +250,17 @@ void WiimoteHandler::CWiidBackgrounSearchCallback(cwiid_wiimote_t* aWiimote,
         if (aWiimote) {
             instance->WiimoteConnected(aWiimote);
         }
+    } else {
+        switch (aError) {
+            case -1: {
+                instance->WiimoteDisconnected(aWiimote);
+                break;
+            }
+            default: {
+                ULOG_ERR_F("Unhandled error");
+                break;
+            }
+        }
     }
 
     WiimoteHandler::Release();
@@ -253,39 +268,33 @@ void WiimoteHandler::CWiidBackgrounSearchCallback(cwiid_wiimote_t* aWiimote,
 
 void WiimoteHandler::WiimoteConnected(cwiid_wiimote_t* aWiimote)
 {
-    Disconnect();
+    Wiimote* wiimote = new Wiimote(aWiimote);
 
-    mWiimote = aWiimote;
+    ULOG_DEBUG_F("new Wiimote object %p for cwiid wiimote %p", wiimote, aWiimote);
 
-    if (cwiid_set_mesg_callback(mWiimote, &cwiid_callback)) {
-        ULOG_DEBUG_F("Error setting callback");
-        if (cwiid_close(mWiimote)) {
-            ULOG_DEBUG_F("Error on disconnect");
+    mConnectedWiimotes.push_back(wiimote);
+
+    list<const IWiimoteHandlerObserver*>::iterator i;
+    for (i = mObservers.begin(); i != mObservers.end(); ++i) {
+        IWiimoteHandlerObserver* observer = (IWiimoteHandlerObserver*)*i;
+        observer->WiimoteConnected(wiimote);
+    }
+}
+
+void WiimoteHandler::WiimoteDisconnected(cwiid_wiimote_t* aWiimote)
+{
+    ULOG_DEBUG_F("cwiid wiimote %p disconnected", aWiimote);
+
+    list<Wiimote*>::reverse_iterator i;
+    for (i = mConnectedWiimotes.rbegin(); i != mConnectedWiimotes.rend(); ++i) {
+        Wiimote* wiimote = (Wiimote*)*i;
+        ULOG_DEBUG_F("wiimote %p", wiimote);
+        if (wiimote->GetCWiidWiimote() == aWiimote) {
+            ULOG_DEBUG_F("removing");
+            mConnectedWiimotes.remove(wiimote);
+            ULOG_DEBUG_F("deleting");
+            delete wiimote;
         }
-        mWiimote = NULL;
-        NotifyConnectionStatus(IWiimoteObserver::EConnectionError);
-        NotifyConnectionStatus(IWiimoteObserver::ENotConnected);
-    } else {
-        ULOG_DEBUG_F("Connected");
-        if (cwiid_get_acc_cal(mWiimote, CWIID_EXT_NONE, &mWmCal)) {
-            ULOG_DEBUG_F("Unable to retrieve accelerometer calibration");
-        }
-
-        NotifyConnectionStatus(IWiimoteObserver::EConnected);
-
-        /*
-        set_gui_state();
-        set_report_mode();
-        cwiid_enable(wiimote, CWIID_FLAG_MOTIONPLUS);
-        */
-
-        uint8_t rpt_mode;    
-        rpt_mode = CWIID_RPT_STATUS | CWIID_RPT_BTN | CWIID_RPT_ACC;
-        if (cwiid_set_rpt_mode(mWiimote, rpt_mode)) {
-            ULOG_DEBUG_F("Error setting report mode");
-        }
-
-        cwiid_request_status(mWiimote);
     }
 }
 
@@ -306,7 +315,7 @@ WiimoteHandler::~WiimoteHandler()
         cwiid_close(mWiimote);
     }
 }
-
+#if 0
 void cwiid_btn(struct cwiid_btn_mesg *mesg)
 {
     WiimoteHandler *handler = WiimoteHandler::GetInstance();
@@ -516,3 +525,4 @@ void cwiid_callback(cwiid_wiimote_t *wiimote, int mesg_count,
     gdk_flush();
     gdk_threads_leave();
 }
+#endif

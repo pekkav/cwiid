@@ -17,11 +17,11 @@
 
 #include "common.h"
 #include "buttonframe.h"
-#include "wiimotehandler.h"
+#include "wiimote.h"
 
 #include <hildon/hildon.h>
 
-ButtonFrame::ButtonFrame() : Gtk::Frame("Buttons"),
+ButtonFrame::ButtonFrame() : mVBox(false, 0),
                              mTable(8, 3, false),
                              mBLabel("B"),
                              mUpLabel("Up"),
@@ -34,7 +34,11 @@ ButtonFrame::ButtonFrame() : Gtk::Frame("Buttons"),
                              mPlusLabel("+"),
                              m1Label("1"),
                              m2Label("2"),
-                             mHandler(NULL)
+                             mDisconnectButton(Gtk::Hildon::SIZE_AUTO_WIDTH |
+                                                   Gtk::Hildon::SIZE_FINGER_HEIGHT,
+                                               Hildon::BUTTON_ARRANGEMENT_VERTICAL,
+                                               "Disconnect"),
+                             mWiimote(NULL)
 {
     // B button
     AddButton(mBLabel, mBEv, mBAlign,
@@ -92,23 +96,28 @@ ButtonFrame::ButtonFrame() : Gtk::Frame("Buttons"),
 
     mTable.show();
 
+    mVBox.show();
+    mVBox.pack_start(mTable);
+
+    mDisconnectButton.show();
+    mVBox.pack_start(mDisconnectButton, Gtk::PACK_SHRINK);
+    mDisconnectButton.signal_clicked().connect(
+        sigc::mem_fun(*this, &ButtonFrame::OnDisconnectButtonClicked));
+
     mAlign.show();
-    mAlign.set_padding(0, 0, HILDON_MARGIN_DEFAULT, HILDON_MARGIN_DEFAULT);
-    mAlign.add(mTable);
+    mAlign.set_padding(0, 0, HILDON_MARGIN_HALF, HILDON_MARGIN_HALF);
+    mAlign.add(mVBox);
+
+    ConnectionStatus(NULL, ENotConnected);
 
     add(mAlign);
-
-    mHandler = WiimoteHandler::GetInstance();
-    mHandler->AddObserver(this);
 }
 
 ButtonFrame::~ButtonFrame()
 {
-    mHandler->RemoveObserver(this);
-    WiimoteHandler::Release();
 }
 
-void ButtonFrame::ConnectionStatus(ConnStatus aStatus)
+void ButtonFrame::ConnectionStatus(Wiimote* /*aWiimote*/, ConnStatus aStatus)
 {
     bool sensitive = false;
     if (aStatus == EConnected) {
@@ -128,12 +137,16 @@ void ButtonFrame::ConnectionStatus(ConnStatus aStatus)
     mPlusLabel.set_sensitive(sensitive);
     m1Label.set_sensitive(sensitive);
     m2Label.set_sensitive(sensitive);
+
+    mDisconnectButton.set_sensitive(sensitive);
+
+    if (!sensitive) {
+        mWiimote = NULL;
+    }
 }
 
 void ButtonFrame::ButtonDown(WiimoteButton aButton)
 {
-    ULOG_DEBUG_F("%d", aButton);
-
     Gdk::Color green("green");
 
     switch (aButton) {
@@ -190,8 +203,6 @@ void ButtonFrame::ButtonDown(WiimoteButton aButton)
 
 void ButtonFrame::ButtonUp(WiimoteButton aButton)
 {
-    ULOG_DEBUG_F("%d", aButton);
-
     switch (aButton) {
         case EUp: {
             mUpEv.unset_bg(Gtk::STATE_NORMAL);
@@ -244,6 +255,18 @@ void ButtonFrame::ButtonUp(WiimoteButton aButton)
     }
 }
 
+void ButtonFrame::SetWiimote(Wiimote *aWiimote)
+{
+    mWiimote = aWiimote;
+
+    mWiimote->AddObserver(this);
+
+    ConnectionStatus(NULL, EConnected);
+
+    // Start getting button and status messaged from wiimote
+    mWiimote->StartReporting(CWIID_RPT_STATUS | CWIID_RPT_BTN);
+}
+
 void ButtonFrame::AddButton(Gtk::Widget& aLabel, Gtk::EventBox& aEv, Gtk::Alignment& aAlign,
                             unsigned int aLeftAttach, unsigned int aRightAttach,
                             unsigned int aTopAttach, unsigned int aBottomAttach,
@@ -266,4 +289,9 @@ void ButtonFrame::AddButton(Gtk::Widget& aLabel, Gtk::EventBox& aEv, Gtk::Alignm
                   aTopAttach, aBottomAttach,
                   aXOptions,
                   aYOptions);
+}
+
+void ButtonFrame::OnDisconnectButtonClicked()
+{
+    mWiimote->Disconnect();
 }

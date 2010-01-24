@@ -21,7 +21,7 @@
 #include "motionsensorframe.h"
 #include "wiimotehandler.h"
 
-MotionSensorFrame::MotionSensorFrame() : Gtk::Frame("Motion Sensors"),
+MotionSensorFrame::MotionSensorFrame() : //Gtk::Frame("Motion Sensors"),
                                          mTable(6, 3, false),
                                          mXLabel("X:"),
                                          mXValue("0"),
@@ -59,22 +59,22 @@ MotionSensorFrame::MotionSensorFrame() : Gtk::Frame("Motion Sensors"),
     mTable.show();
 
     mAlign.show();
-    mAlign.set_padding(0, 0, HILDON_MARGIN_DEFAULT, HILDON_MARGIN_DEFAULT);
+    mAlign.set_padding(0, 0, 0, 0/*HILDON_MARGIN_DEFAULT, HILDON_MARGIN_DEFAULT*/);
     mAlign.add(mTable);
     
     add(mAlign);
 
     mHandler = WiimoteHandler::GetInstance();
-    mHandler->AddObserver(this);
+    //mHandler->AddObserver(this);
 }
 
 MotionSensorFrame::~MotionSensorFrame()
 {
-    mHandler->RemoveObserver(this);
+    //mHandler->RemoveObserver(this);
     WiimoteHandler::Release();
 }
 
-void MotionSensorFrame::ConnectionStatus(ConnStatus aStatus)
+void MotionSensorFrame::ConnectionStatus(Wiimote* /*aWiimote*/, ConnStatus aStatus)
 {
     bool sensitive = false;
     if (aStatus == EConnected) {

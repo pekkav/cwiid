@@ -33,7 +33,7 @@ public:
 
     virtual ~MotionSensorFrame();
 
-    void ConnectionStatus(ConnStatus aStatus);
+    void ConnectionStatus(Wiimote* aWiimote, ConnStatus aStatus);
 
     void MotionData(unsigned int aXAcc,
                     unsigned int aYAcc,

@@ -21,11 +21,8 @@
 #include "mainwindow.h"
 #include "wiimotehandler.h"
 
-MainWindow::MainWindow() : mVBox(false, 0),
-                           mConnLabel("No connection"),
-                           mConnectBtn("Connect"),
-                           mHandler(NULL),
-                           mConnStatus(ENotConnected)
+MainWindow::MainWindow() : mHBox(true, 0),
+                           mHandler(NULL)
 {
     // App menu content
     mConnectBtn.show();
@@ -35,25 +32,21 @@ MainWindow::MainWindow() : mVBox(false, 0),
         sigc::mem_fun(*this, &MainWindow::OnConnectButtonClicked));
     // Add to program as common app menu
     Hildon::Program::get_instance()->set_common_app_menu(mAppMenu);
-    
-    // Status box
-    mConnLabel.show();
-    mStatusBox.pack_start(mConnLabel);
-    mStatusLabel.show();
-    mStatusBox.pack_start(mStatusLabel);
-    mExtLabel.show();
-    mStatusBox.pack_start(mExtLabel);
-    mVBox.pack_start(mStatusBox);
 
-    // Button and motion sensor frames
-    mButtonFrame.show();
-    mFrameBox.pack_start(mButtonFrame);
-    mMotionSensorFrame.show();
-    mFrameBox.pack_start(mMotionSensorFrame);
-    mVBox.pack_start(mFrameBox);
+    mButtonFrame1.show();
+    mHBox.pack_start(mButtonFrame1);
+
+    mButtonFrame2.show();
+    mHBox.pack_start(mButtonFrame2);
+
+    mButtonFrame3.show();
+    mHBox.pack_start(mButtonFrame3);
+
+    mButtonFrame4.show();
+    mHBox.pack_start(mButtonFrame4);
 
     // Add container to the window
-    add(mVBox);
+    add(mHBox);
 
     // Make everything visible
     show_all();
@@ -68,6 +61,16 @@ MainWindow::~MainWindow()
     WiimoteHandler::Release();
 }
 
+void MainWindow::WiimoteConnected(Wiimote *aConnectedWiimote)
+{
+    ULOG_DEBUG_F();
+
+    if (!mButtonFrame1.HasWiimote()) {
+        mButtonFrame1.SetWiimote(aConnectedWiimote);
+        return;
+    }
+}
+/*
 void MainWindow::ConnectionStatus(ConnStatus aStatus)
 {
     ULOG_DEBUG_F("%d", aStatus);
@@ -146,14 +149,16 @@ void MainWindow::CurrentWiimoteExtension(WiimoteExtension aExtension)
 
     mExtLabel.set_text(extString);
 }
-
+*/
 void MainWindow::OnConnectButtonClicked()
 {
+    /*
     if (mConnStatus == ENotConnected) {
         mHandler->Connect();
     } else {
         mHandler->Disconnect();
     }
+    */
 }
 
 void MainWindow::ShowConnectDialog()

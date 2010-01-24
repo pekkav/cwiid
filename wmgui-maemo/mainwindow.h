@@ -22,12 +22,10 @@
 
 #include "buttonframe.h"
 #include "motionsensorframe.h"
-#include "wiimoteobserver.h"
-
-class WiimoteHandler;
+#include "wiimotehandler.h"
 
 class MainWindow : public Hildon::StackableWindow,
-                   public IWiimoteObserver
+                   public IWiimoteHandlerObserver
 {
 public:
 
@@ -35,12 +33,14 @@ public:
 
     virtual ~MainWindow();
 
+    void WiimoteConnected(Wiimote *aConnectedWiimote);
+/*
     void ConnectionStatus(ConnStatus aStatus);
 
     void BatteryLevel(unsigned int aBatteryLevel);
 
     void CurrentWiimoteExtension(WiimoteExtension aExtension);
-
+*/
 private:
 
     void OnConnectButtonClicked();
@@ -50,24 +50,20 @@ private:
 private:
 
     // Child widgets
-    Gtk::VBox mVBox;
+    Gtk::HBox mHBox;
 
-    Gtk::HBox mStatusBox;
-    Gtk::Label mConnLabel;
-    Gtk::Label mStatusLabel;
-    Gtk::Label mExtLabel;
+    Gtk::VBox mWiimoteVBox1;
 
-    Gtk::HBox mFrameBox;
-    ButtonFrame mButtonFrame;
-    MotionSensorFrame mMotionSensorFrame;
+    ButtonFrame mButtonFrame1;
+    ButtonFrame mButtonFrame2;
+    ButtonFrame mButtonFrame3;
+    ButtonFrame mButtonFrame4;
 
     // App menu widgets
     Hildon::AppMenu mAppMenu;
     Gtk::Button mConnectBtn;
 
     WiimoteHandler *mHandler;
-
-    ConnStatus mConnStatus;
 };
 
 #endif // __MAINWINDOW_H_
